@@ -5,6 +5,7 @@ import numpy as np
 import sys
 from subprocess import run, call, Popen, PIPE
 import os
+from tqdm import tqdm
 from time import time, sleep
 from helpers import *
 
@@ -39,9 +40,8 @@ BreakTimes = []
 KeyLengths = []
 
 
-for i, key_to_be_broken in enumerate(Keys_dict):
-    if(i > FirstPrimes_limit):
-        break
+for key_to_be_broken in tqdm(Keys_dict[:FirstPrimes_limit], desc='Brute Forcing different Key Lengths'):
+
 
     initial_n = key_to_be_broken[3]
     initial_length = key_to_be_broken[4]
