@@ -18,6 +18,10 @@ public:
         cin >> msg;
         message = msg;
     }
+    void set_message(string msg)
+    {
+        message = msg;
+    }
 
     string get_message() {
         return message;
@@ -148,7 +152,7 @@ public:
         ofstream fileclear("shared_public_key.txt", ofstream::trunc);
         ofstream filewrite("shared_public_key.txt");
         if (filewrite.is_open()) {
-            filewrite << e;
+            filewrite << e << " " << n;
             filewrite.close();
         }
         else {
@@ -174,16 +178,28 @@ public:
 };
 
 
-int main() {
+int main(int argc, char* argv[]) {
 
-
+    
+    
     while (1)
     {
         receiver ayman;
         sender amr;
         ayman.generate_keys_and_share_public_key();
         amr.read_public_key();
-        amr.read_message();
+
+        //--------- AYMAN EXTENSION : I added this block of code just to exit execution after the first sent message-----------
+        bool foreverFlag=true;
+        if (argc>1)                 //I exit execution if I passed the msg as an argument to the program, not as stdin stream
+        {
+            amr.set_message(argv[1]);
+            foreverFlag = false;
+        }
+        else amr.read_message();
+        //----------------------------------------------- END ----------------------------------------------------------------
+
+
         vector<int> encrypted = amr.encoder(amr.get_public_key(), ayman.get_n());
         string encrpted_mess;
         for (int i = 0; i < encrypted.size(); i++)
@@ -192,6 +208,8 @@ int main() {
         }
         string decrypted = ayman.decoder(encrypted, ayman.get_n(), ayman.get_d());
         ayman.display_in_receiver(encrpted_mess, amr.get_message());
+
+        if(! foreverFlag) return 0;
         
     }
    
