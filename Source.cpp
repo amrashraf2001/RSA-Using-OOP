@@ -70,8 +70,6 @@ public:
             form.push_back(encrypt((int)letter, e, n));
         return form;
     }
-
-
 };
 
 class receiver {
