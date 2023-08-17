@@ -6,6 +6,20 @@
 #include<cmath>
 using namespace std;
 
+bool isPrime(int number) {
+    if (number <= 1) {  
+        return false;
+    }
+
+    for (int i = 2; i * i <= number; ++i) {
+        if (number % i == 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 class sender {
 private:
     string message;
@@ -13,14 +27,13 @@ private:
 
 public:
 
-    void read_message() {
+    bool read_message() {
         string msg;
         cin >> msg;
         message = msg;
-    }
-    void set_message(string msg)
-    {
-        message = msg;
+        if (msg == "") { return false; }
+        else { return true; }
+        
     }
 
     string get_message() {
@@ -52,7 +65,7 @@ public:
 
     }
 
-    int encrypt(int mess, int e, int n)
+    int encrypt(int mess, int e, long long n)
     {
 
         //int c =(int) pow(mess, e);
@@ -63,18 +76,23 @@ public:
         }
         return m;
     }
-    vector<int> encoder(int e, int n)
+    vector<int> encoder(int e, long long n)
     {
         vector<int> form;
-        for (auto& letter : message)
+        for (auto& letter : message) {
+
             form.push_back(encrypt((int)letter, e, n));
+        }
+            
         return form;
     }
+
+
 };
 
 class receiver {
 private:
-    int p, q, n, e, k, d, phi;
+    long long p, q, n, e, k, d, phi;
 
 public:
 
@@ -89,7 +107,7 @@ public:
             h = temp;
         }
     }
-    int decrypt(int c, int n, int d)
+    int decrypt(int c, long long n, long long d)
     {
 
        /* long long m = pow(c, d);
@@ -101,7 +119,7 @@ public:
         return (int)m;
     }
 
-    string decoder(vector<int> encoded, int n, int d)
+    string decoder(vector<int> encoded, long long n, long long d)
     {
         string s;
         for (auto& num : encoded)
@@ -109,20 +127,20 @@ public:
         return s;
     }
 
-    int get_n() {
+    long long get_n() {
         return n;
     }
 
-    int get_d() {
+    long long get_d() {
         return d;
     }
 
-    void generate_keys_and_share_public_key() {
+    pair<bool,string> generate_keys_and_share_public_key() {
         ifstream inputFile("receiver_input.txt");
 
         if (!inputFile) {
             cout << "Error opening file!" << std::endl;
-            return;
+            return make_pair(false,"f");
         }
 
         string line;
@@ -132,9 +150,21 @@ public:
         }
         else {
             cout << "Empty file!" << endl;
-            return;
+            return make_pair(false, "f");
         }
         inputFile.close();
+        if (p<=0) {
+            return make_pair(false, "pnz");
+        }
+        if (q <= 0) {
+            return make_pair(false, "qnz");
+        }
+        if (!isPrime(p)) {
+            return make_pair(false, "pnotp");
+        }
+        if (!isPrime(q)) {
+            return make_pair(false, "qnotp");
+        }
         n = p * q;
         e = 2;
         phi = (p - 1) * (q - 1);
@@ -150,13 +180,15 @@ public:
         ofstream fileclear("shared_public_key.txt", ofstream::trunc);
         ofstream filewrite("shared_public_key.txt");
         if (filewrite.is_open()) {
-            filewrite << e << " " << n;
+            filewrite << e;
             filewrite.close();
         }
         else {
             cout << "Failed to open the file." << endl;
         }
-
+       
+        return make_pair(true, "");
+        
     }
 
     void display_in_receiver(string str1, string str2)
@@ -176,28 +208,40 @@ public:
 };
 
 
-int main(int argc, char* argv[]) {
+int main() {
 
-    
-    
-    while (1)
-    {
+
+    //while (1)
+    //{
         receiver ayman;
         sender amr;
-        ayman.generate_keys_and_share_public_key();
-        amr.read_public_key();
-
-        //--------- AYMAN EXTENSION : I added this block of code just to exit execution after the first sent message-----------
-        bool foreverFlag=true;
-        if (argc>1)                 //I exit execution if I passed the msg as an argument to the program, not as stdin stream
-        {
-            amr.set_message(argv[1]);
-            foreverFlag = false;
+        pair<bool, string> temp;
+        temp=ayman.generate_keys_and_share_public_key();
+        if (!temp.first) {
+            if (temp.second=="pnz") {
+                cout << "the value of p is below or equal zero, please try again"<<endl;
+                //continue;
+                return 0;
+            }
+            if (temp.second == "qnz") {
+                cout << "the value of q is below or equal zero, please try again" << endl;
+                //continue;
+                return 0;
+            }
+            if (temp.second == "pnotp") {
+                cout << "the value of p is not a prime number, please try again" << endl;
+                //continue;
+                return 0;
+            }
+            if (temp.second == "qnotp") {
+                cout << "the value of q is not a prime number, please try again" << endl;
+                //continue;
+                return 0;
+            }
         }
-        else amr.read_message();
-        //----------------------------------------------- END ----------------------------------------------------------------
-
-
+        amr.read_public_key();
+        bool temp2=amr.read_message();
+        if (!temp2)return 0;//continue;
         vector<int> encrypted = amr.encoder(amr.get_public_key(), ayman.get_n());
         string encrpted_mess;
         for (int i = 0; i < encrypted.size(); i++)
@@ -205,11 +249,9 @@ int main(int argc, char* argv[]) {
             encrpted_mess += encrypted[i];
         }
         string decrypted = ayman.decoder(encrypted, ayman.get_n(), ayman.get_d());
-        ayman.display_in_receiver(encrpted_mess, amr.get_message());
-
-        if(! foreverFlag) return 0;
+        ayman.display_in_receiver(encrpted_mess, decrypted);
         
-    }
+    //}
    
     return 0;
 }
